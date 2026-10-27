@@ -1,0 +1,16 @@
+#Dependencias de Node
+node_modules/
+
+#Variables de entorno: no se suben por que hay credenciales, etc..
+.env
+
+#Archivos de windows
+Thumbs.db
+desktop.ini
+
+#Logs
+*.log
+
+#Datos de clientes: no se suben por que contienen datos sensibles y privados.
+reports/
+*.db
