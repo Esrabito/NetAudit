@@ -8,24 +8,37 @@ const execFileAsync = util.promisify(childProcess.execFile);
 
 async function ejecutarPing(host) {
 
-    const procesoPing = await execFileAsync("ping", ["-n", "4", host]);
+    if (!esIPv4Valida(host)) {
+       throw new Error("La funcion solo acepta IPV4, valor recibido: " + host);
+    }
 
-    return procesoPing.stdout;
+    try {
+        const procesoPing = await execFileAsync("ping", ["-n", "4", host]);
+
+        return procesoPing.stdout;
+
+    } catch (error) {
+        if (error.code === 1 && error.stdout) {
+            return error.stdout;
+        }
+
+        throw error;
+    }
 }
 
-const hosts = ["8.8.8.8", "google.com", "localhost", "estonoexiste.invalid"];
+const hosts = ["8.8.8.8", "google.com", "localhost", "192.0.2.1", "estonoexiste.invalid"];
 
 async function probar(direccionesHosts) {
 
     for (let i = 0; i < direccionesHosts.length; i++) {
 
         try {
-            const respuestaHost = await resolverHost(direccionesHosts[i]);
-            console.log(respuestaHost);
+            const respuestaHost = await ejecutarPing(direccionesHosts[i]);
+            console.log("Host: " + direccionesHosts[i] + " " + contarRespuestasReales(respuestaHost));
 
 
         } catch (error) {
-            console.error("Error al resolver host en : ", direccionesHosts[i]);
+            console.error("Error al resolver el ping en el host: ", direccionesHosts[i], error.message);
             console.log("Código:", error.code);
 
         }
@@ -70,6 +83,42 @@ async function resolverHost(host) {
     return respuestaDns.address;
 
 }
+
+
+function contarRespuestasReales(salida){
+
+   const lineas = salida.split("\n");
+
+   let cont = 0;
+
+    for(let i = 0; i < lineas.length; i++){
+
+        if(lineas[i].includes("TTL=")){
+            cont++;
+        }
+
+    }
+
+    return cont;
+
+}
+
+// const respuestasReales = "Respuesta desde 8.8.8.8: bytes=32 tiempo=3ms TTL=119\nRespuesta desde 8.8.8.8: bytes=32 tiempo=4ms TTL=119";
+// const inaccesible = "Respuesta desde 192.168.1.58: Host de destino inaccesible.\nRespuesta desde 192.168.1.58: Host de destino inaccesible.";
+// const timeout = "Tiempo de espera agotado para esta solicitud.\nTiempo de espera agotado para esta solicitud.";
+// const enIngles = "Reply from 8.8.8.8: bytes=32 time=3ms TTL=119\nReply from 8.8.8.8: bytes=32 time=5ms TTL=119\nReply from 8.8.8.8: bytes=32 time=3ms TTL=119";
+// const mezcla = "Respuesta desde 8.8.8.8: bytes=32 tiempo=3ms TTL=119\nTiempo de espera agotado para esta solicitud.";
+// const ttlExpirado = "Respuesta desde 10.0.0.1: TTL expiró durante el tránsito.";
+// const vacio = "";
+
+// console.log("respuestasReales (esperado 2) →", contarRespuestasReales(respuestasReales));
+// console.log("inaccesible (esperado 0) →", contarRespuestasReales(inaccesible));
+// console.log("timeout (esperado 0) →", contarRespuestasReales(timeout));
+// console.log("enIngles (esperado 3) →", contarRespuestasReales(enIngles));
+// console.log("mezcla (esperado 1) →", contarRespuestasReales(mezcla));
+// console.log("ttlExpirado (esperado 0) →", contarRespuestasReales(ttlExpirado));
+// console.log("vacio (esperado 0) →", contarRespuestasReales(vacio));
+
 
 
 // console.log("8.8.8.8 →", esIPv4Valida("8.8.8.8"));
