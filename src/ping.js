@@ -1,5 +1,6 @@
 const childProcess = require("child_process");
 const util = require("util");
+const dns = require("dns");
 
 const execFileAsync = util.promisify(childProcess.execFile);
 
@@ -12,20 +13,21 @@ async function ejecutarPing(host) {
     return procesoPing.stdout;
 }
 
-const hosts = ["8.8.8.8", "192.168.1.250", "10.255.255.1", "estonoexiste.invalid", "192.0.2.1"];
+const hosts = ["8.8.8.8", "google.com", "localhost", "estonoexiste.invalid"];
 
 async function probar(direccionesHosts) {
 
     for (let i = 0; i < direccionesHosts.length; i++) {
 
         try {
+            const respuestaHost = await resolverHost(direccionesHosts[i]);
+            console.log(respuestaHost);
 
-            const respuestaPing = await ejecutarPing(direccionesHosts[i]);
-            console.log(respuestaPing);
+
         } catch (error) {
-            console.error("Error al hacer ping en el host: ", direccionesHosts[i], error.message);
+            console.error("Error al resolver host en : ", direccionesHosts[i]);
             console.log("Código:", error.code);
-            console.log("Salida:", error.stdout);
+
         }
 
     }
@@ -57,17 +59,30 @@ function esIPv4Valida(texto) {
     return true;
 }
 
-console.log("8.8.8.8 →", esIPv4Valida("8.8.8.8"));
-console.log("192.168.1.250 →", esIPv4Valida("192.168.1.250"));
-console.log("0.0.0.0 →", esIPv4Valida("0.0.0.0"));
-console.log("255.255.255.255 →", esIPv4Valida("255.255.255.255"));
-console.log("256.1.1.1 →", esIPv4Valida("256.1.1.1"));
-console.log("1.2.3 →", esIPv4Valida("1.2.3"));
-console.log("1.2.3.4.5 →", esIPv4Valida("1.2.3.4.5"));
-console.log("a.b.c.d →", esIPv4Valida("a.b.c.d"));
-console.log("1..2.3 →", esIPv4Valida("1..2.3"));
-console.log("1.2.3.-4 →", esIPv4Valida("1.2.3.-4"));
-console.log("inyección →", esIPv4Valida("8.8.8.8 & del C:\\"));
-console.log("google.com →", esIPv4Valida("google.com"));
+async function resolverHost(host) {
 
-//probar(hosts);
+    if (esIPv4Valida(host)) {
+        return host;
+    }
+
+    const respuestaDns = await dns.promises.lookup(host, { family: 4 });
+
+    return respuestaDns.address;
+
+}
+
+
+// console.log("8.8.8.8 →", esIPv4Valida("8.8.8.8"));
+// console.log("192.168.1.250 →", esIPv4Valida("192.168.1.250"));
+// console.log("0.0.0.0 →", esIPv4Valida("0.0.0.0"));
+// console.log("255.255.255.255 →", esIPv4Valida("255.255.255.255"));
+// console.log("256.1.1.1 →", esIPv4Valida("256.1.1.1"));
+// console.log("1.2.3 →", esIPv4Valida("1.2.3"));
+// console.log("1.2.3.4.5 →", esIPv4Valida("1.2.3.4.5"));
+// console.log("a.b.c.d →", esIPv4Valida("a.b.c.d"));
+// console.log("1..2.3 →", esIPv4Valida("1..2.3"));
+// console.log("1.2.3.-4 →", esIPv4Valida("1.2.3.-4"));
+// console.log("inyección →", esIPv4Valida("8.8.8.8 & del C:\\"));
+// console.log("google.com →", esIPv4Valida("google.com"));
+
+probar(hosts);
