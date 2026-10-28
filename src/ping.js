@@ -3,17 +3,17 @@ const util = require("util");
 const dns = require("dns");
 
 const execFileAsync = util.promisify(childProcess.execFile);
-
+const CANTIDAD_PAQUETES = 4;
 
 
 async function ejecutarPing(host) {
 
     if (!esIPv4Valida(host)) {
-       throw new Error("La funcion solo acepta IPV4, valor recibido: " + host);
+        throw new Error("La funcion solo acepta IPV4, valor recibido: " + host);
     }
 
     try {
-        const procesoPing = await execFileAsync("ping", ["-n", "4", host]);
+        const procesoPing = await execFileAsync("ping", ["-n", String(CANTIDAD_PAQUETES), host]);
 
         return procesoPing.stdout;
 
@@ -30,21 +30,48 @@ const hosts = ["8.8.8.8", "google.com", "localhost", "192.0.2.1", "estonoexiste.
 
 async function probar(direccionesHosts) {
 
+    const resultados = [];
+
     for (let i = 0; i < direccionesHosts.length; i++) {
 
         try {
             const ipHost = await resolverHost(direccionesHosts[i]);
             const salidaPing = await ejecutarPing(ipHost);
-            console.log("Host: " + direccionesHosts[i] + " IP: " +  ipHost + " Respuestas: " + contarRespuestasReales(salidaPing));
+            const recibidos = contarRespuestasReales(salidaPing);
+            let estado = "";
 
+            if (recibidos > 0) { estado = "responde" } else { estado = "caído" };
+
+            const resultado = {
+                host: direccionesHosts[i],
+                ip: ipHost,
+                enviados: CANTIDAD_PAQUETES,
+                recibidos: recibidos,
+                perdida: (CANTIDAD_PAQUETES - recibidos) / CANTIDAD_PAQUETES * 100,
+                estado: estado,
+                motivo: null
+            }
+            resultados.push(resultado);
 
         } catch (error) {
-            console.error("Error al evaluar el host: ", direccionesHosts[i], error.message);
-            console.log("Código:", error.code);
 
+            const resultado = {
+                host: direccionesHosts[i],
+                ip: null,
+                enviados: null,
+                recibidos: null,
+                perdida: null,
+                estado: "no evaluado",
+                motivo: error.code
+            }
+            resultados.push(resultado);
         }
 
     }
+
+    console.table(resultados);
+    return resultados;
+
 }
 
 
@@ -86,21 +113,32 @@ async function resolverHost(host) {
 }
 
 
-function contarRespuestasReales(salida){
+function contarRespuestasReales(salida) {
 
-   const lineas = salida.split("\n");
+    return filtrarRespuestasReales(salida).length;
+}
 
-   let cont = 0;
+function filtrarRespuestasReales(salida) {
 
-    for(let i = 0; i < lineas.length; i++){
+    const lineas = salida.split("\n");
+    const lineasReales = [];
 
-        if(lineas[i].includes("TTL=")){
-            cont++;
+
+    for (let i = 0; i < lineas.length; i++) {
+
+        if (lineas[i].includes("TTL=")) {
+            lineasReales.push(lineas[i]);  
         }
 
     }
 
-    return cont;
+    return lineasReales;
+
+}
+
+function extraerLatencias(salida) {
+
+
 
 }
 
