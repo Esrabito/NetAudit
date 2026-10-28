@@ -33,12 +33,13 @@ async function probar(direccionesHosts) {
     for (let i = 0; i < direccionesHosts.length; i++) {
 
         try {
-            const respuestaHost = await ejecutarPing(direccionesHosts[i]);
-            console.log("Host: " + direccionesHosts[i] + " " + contarRespuestasReales(respuestaHost));
+            const ipHost = await resolverHost(direccionesHosts[i]);
+            const salidaPing = await ejecutarPing(ipHost);
+            console.log("Host: " + direccionesHosts[i] + " IP: " +  ipHost + " Respuestas: " + contarRespuestasReales(salidaPing));
 
 
         } catch (error) {
-            console.error("Error al resolver el ping en el host: ", direccionesHosts[i], error.message);
+            console.error("Error al evaluar el host: ", direccionesHosts[i], error.message);
             console.log("Código:", error.code);
 
         }
