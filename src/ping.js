@@ -28,52 +28,15 @@ async function ejecutarPing(host) {
 
 const hosts = ["8.8.8.8", "google.com", "localhost", "192.0.2.1", "estonoexiste.invalid"];
 
-async function probar(direccionesHosts) {
+async function auditoriaHosts(direccionesHosts) {
 
     const resultados = [];
 
     for (let i = 0; i < direccionesHosts.length; i++) {
 
-        try {
-            const ipHost = await resolverHost(direccionesHosts[i]);
-            const salidaPing = await ejecutarPing(ipHost);
-            const latenciasExtraidas = extraerLatencias(salidaPing);
-            const latenciasResumidas = resumirLatencias(latenciasExtraidas);
-            const recibidos = contarRespuestasReales(salidaPing);
-            let estado = "";
+        const hostEvaluado = await evaluarHost(direccionesHosts[i]);
 
-            if (recibidos > 0) { estado = "responde" } else { estado = "caído" };
-
-            const resultado = {
-                host: direccionesHosts[i],
-                ip: ipHost,
-                enviados: CANTIDAD_PAQUETES,
-                recibidos: recibidos,
-                perdida: (CANTIDAD_PAQUETES - recibidos) / CANTIDAD_PAQUETES * 100,
-                latenciaMin: latenciasResumidas.min,
-                latenciaMax: latenciasResumidas.max,
-                latenciaPromedio: latenciasResumidas.promedio,
-                estado: estado,
-                motivo: null
-            }
-            resultados.push(resultado);
-
-        } catch (error) {
-
-            const resultado = {
-                host: direccionesHosts[i],
-                ip: null,
-                enviados: null,
-                recibidos: null,
-                perdida: null,
-                latenciaMin: null,
-                latenciaMax: null,
-                latenciaPromedio: null,
-                estado: "no evaluado",
-                motivo: error.code
-            }
-            resultados.push(resultado);
-        }
+        resultados.push(hostEvaluado);
 
     }
 
@@ -82,6 +45,51 @@ async function probar(direccionesHosts) {
 
 }
 
+
+async function evaluarHost(host) {
+
+    try {
+        const ipHost = await resolverHost(host);
+        const salidaPing = await ejecutarPing(ipHost);
+        const latenciasExtraidas = extraerLatencias(salidaPing);
+        const latenciasResumidas = resumirLatencias(latenciasExtraidas);
+        const recibidos = contarRespuestasReales(salidaPing);
+        let estado = "";
+
+        if (recibidos > 0) { estado = "responde" } else { estado = "caído" };
+
+        const resultado = {
+            host: host,
+            ip: ipHost,
+            enviados: CANTIDAD_PAQUETES,
+            recibidos: recibidos,
+            perdida: (CANTIDAD_PAQUETES - recibidos) / CANTIDAD_PAQUETES * 100,
+            latenciaMin: latenciasResumidas.min,
+            latenciaMax: latenciasResumidas.max,
+            latenciaPromedio: latenciasResumidas.promedio,
+            estado: estado,
+            motivo: null
+        }
+        return resultado;
+
+    } catch (error) {
+
+        const resultado = {
+            host: host,
+            ip: null,
+            enviados: null,
+            recibidos: null,
+            perdida: null,
+            latenciaMin: null,
+            latenciaMax: null,
+            latenciaPromedio: null,
+            estado: "no evaluado",
+            motivo: error.code
+        }
+        return resultado;
+    }
+
+}
 
 function esIPv4Valida(texto) {
 
@@ -237,4 +245,4 @@ function resumirLatencias(latencias) {
 // console.log("inyección →", esIPv4Valida("8.8.8.8 & del C:\\"));
 // console.log("google.com →", esIPv4Valida("google.com"));
 
-probar(hosts);
+auditoriaHosts(hosts);
