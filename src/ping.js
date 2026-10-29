@@ -37,6 +37,8 @@ async function probar(direccionesHosts) {
         try {
             const ipHost = await resolverHost(direccionesHosts[i]);
             const salidaPing = await ejecutarPing(ipHost);
+            const latenciasExtraidas = extraerLatencias(salidaPing);
+            const latenciasResumidas = resumirLatencias(latenciasExtraidas);
             const recibidos = contarRespuestasReales(salidaPing);
             let estado = "";
 
@@ -48,6 +50,9 @@ async function probar(direccionesHosts) {
                 enviados: CANTIDAD_PAQUETES,
                 recibidos: recibidos,
                 perdida: (CANTIDAD_PAQUETES - recibidos) / CANTIDAD_PAQUETES * 100,
+                latenciaMin: latenciasResumidas.min,
+                latenciaMax: latenciasResumidas.max,
+                latenciaPromedio: latenciasResumidas.promedio,
                 estado: estado,
                 motivo: null
             }
@@ -61,6 +66,9 @@ async function probar(direccionesHosts) {
                 enviados: null,
                 recibidos: null,
                 perdida: null,
+                latenciaMin: null,
+                latenciaMax: null,
+                latenciaPromedio: null,
                 estado: "no evaluado",
                 motivo: error.code
             }
@@ -154,6 +162,47 @@ function extraerLatencias(salida) {
     }
 
     return latencias;
+
+}
+
+function calcularPromedio(latencias) {
+    let sumaLatencias = 0;
+
+    if (latencias.length === 0) {
+        return null;
+    }
+
+    for (let i = 0; i < latencias.length; i++) {
+        sumaLatencias += latencias[i];
+    }
+
+
+
+    return sumaLatencias / latencias.length;
+}
+
+function resumirLatencias(latencias) {
+
+    if (latencias.length === 0) {
+
+        const latenciaResumida = {
+            min: null,
+            max: null,
+            promedio: null
+        }
+
+        return latenciaResumida;
+    }
+
+    const latenciaResumida = {
+        min: Math.min(...latencias),
+        max: Math.max(...latencias),
+        promedio: calcularPromedio(latencias)
+
+    };
+
+    return latenciaResumida;
+
 
 }
 
