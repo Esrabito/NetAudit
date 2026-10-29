@@ -127,7 +127,7 @@ function filtrarRespuestasReales(salida) {
     for (let i = 0; i < lineas.length; i++) {
 
         if (lineas[i].includes("TTL=")) {
-            lineasReales.push(lineas[i]);  
+            lineasReales.push(lineas[i]);
         }
 
     }
@@ -138,7 +138,22 @@ function filtrarRespuestasReales(salida) {
 
 function extraerLatencias(salida) {
 
+    const latencias = [];
+    const lineas = filtrarRespuestasReales(salida);
 
+    for (let i = 0; i < lineas.length; i++) {
+        const lineaMatcheada = lineas[i].match(/[=<](\d+)ms?/);
+
+        if (lineaMatcheada !== null) {
+
+            latencias.push(Number(lineaMatcheada[1]));
+
+        }
+
+
+    }
+
+    return latencias;
 
 }
 
