@@ -4,6 +4,7 @@ const dns = require("dns");
 
 const execFileAsync = util.promisify(childProcess.execFile);
 const CANTIDAD_PAQUETES = 4;
+const CODIGOS_ERRORES = ["EAI_AGAIN", "EAI_FAIL", "ENOTFOUND"];
 
 
 async function ejecutarPing(host) {
@@ -73,20 +74,25 @@ async function evaluarHost(host) {
         return resultado;
 
     } catch (error) {
+        if (CODIGOS_ERRORES.includes(error.code)) {
 
-        const resultado = {
-            host: host,
-            ip: null,
-            enviados: null,
-            recibidos: null,
-            perdida: null,
-            latenciaMin: null,
-            latenciaMax: null,
-            latenciaPromedio: null,
-            estado: "no evaluado",
-            motivo: error.code
+            const resultado = {
+                host: host,
+                ip: null,
+                enviados: null,
+                recibidos: null,
+                perdida: null,
+                latenciaMin: null,
+                latenciaMax: null,
+                latenciaPromedio: null,
+                estado: "no evaluado",
+                motivo: error.code
+            }
+            return resultado;
         }
-        return resultado;
+
+        throw error;
+
     }
 
 }
