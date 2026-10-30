@@ -23,6 +23,10 @@ async function ejecutarPing(host) {
             return error.stdout;
         }
 
+        if(error.code === "ENOENT"){
+            throw new Error("No se encontró el comando ping en este equipo", {cause: error});
+        }
+
         throw error;
     }
 }
